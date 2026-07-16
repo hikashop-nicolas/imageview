@@ -13,6 +13,11 @@ const en: Dict = {
   copied: "Copied",
   newDocument: "New document",
   close: "Close",
+  extractText: "Extract text (OCR)",
+  ocrLanguage: "Language",
+  ocrLoading: "Loading OCR engine…",
+  ocrRecognizing: "Recognizing…",
+  ocrNoText: "No text found.",
 };
 
 const fr: Dict = {
@@ -23,6 +28,11 @@ const fr: Dict = {
   copied: "Copié",
   newDocument: "Nouveau document",
   close: "Fermer",
+  extractText: "Extraire le texte (OCR)",
+  ocrLanguage: "Langue",
+  ocrLoading: "Chargement du moteur OCR…",
+  ocrRecognizing: "Reconnaissance…",
+  ocrNoText: "Aucun texte détecté.",
 };
 
 const ja: Dict = {
@@ -33,6 +43,11 @@ const ja: Dict = {
   copied: "コピーしました",
   newDocument: "新規ドキュメント",
   close: "閉じる",
+  extractText: "テキスト抽出 (OCR)",
+  ocrLanguage: "言語",
+  ocrLoading: "OCRエンジンを読み込み中…",
+  ocrRecognizing: "認識中…",
+  ocrNoText: "テキストが見つかりませんでした。",
 };
 
 const LOCALES: Record<string, Dict> = { en, fr, ja };

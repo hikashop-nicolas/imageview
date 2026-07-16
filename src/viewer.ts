@@ -10,6 +10,7 @@ import { ensureStyles } from "./styles";
 import { translator, type Dict } from "./i18n";
 import { detectCodes, type DetectedCode } from "./detect";
 import { buildCodeCard } from "./card";
+import { buildOcrPanel, type OcrPanel } from "./ocr-panel";
 
 export interface ImageInput {
   bytes: Uint8Array; // the raw image bytes
@@ -45,6 +46,7 @@ class ImageViewer implements ImageViewerHandle {
   private scanPromise: Promise<DetectedCode[]> | null = null;
   private codes: DetectedCode[] = [];
   private card: HTMLElement | null = null;
+  private ocrPanel: OcrPanel | null = null;
 
   constructor(container: HTMLElement, input: ImageInput, opts: ImageViewerOptions) {
     ensureStyles();
@@ -70,11 +72,45 @@ class ImageViewer implements ImageViewerHandle {
       });
       root.appendChild(img);
       this.img = img;
+      root.appendChild(this.buildToolbar());
     } else {
       root.append(this.message(this.tr("nothingToDisplay")));
     }
 
     container.appendChild(root);
+  }
+
+  private buildToolbar(): HTMLElement {
+    const bar = document.createElement("div");
+    bar.className = "iv-toolbar";
+    const ocr = document.createElement("button");
+    ocr.className = "iv-tbtn";
+    ocr.type = "button";
+    ocr.textContent = "OCR";
+    ocr.title = this.tr("extractText");
+    ocr.addEventListener("click", () => this.toggleOcr());
+    bar.appendChild(ocr);
+    return bar;
+  }
+
+  private toggleOcr(): void {
+    if (this.ocrPanel) {
+      this.ocrPanel.destroy();
+      this.ocrPanel = null;
+      return;
+    }
+    if (!this.img) return;
+    const onExtractText = this.opts.onExtractText
+      ? (value: string) => this.opts.onExtractText!(value, { source: "ocr" })
+      : undefined;
+    this.ocrPanel = buildOcrPanel(this.img, this.tr, {
+      onExtractText,
+      onClose: () => {
+        this.ocrPanel?.destroy();
+        this.ocrPanel = null;
+      },
+    });
+    this.root.appendChild(this.ocrPanel.el);
   }
 
   // Run code detection once, lazily, caching the result. Never rejects.
@@ -150,6 +186,8 @@ class ImageViewer implements ImageViewerHandle {
 
   destroy(): void {
     this.closeCard();
+    this.ocrPanel?.destroy();
+    this.ocrPanel = null;
     if (this.url) URL.revokeObjectURL(this.url);
     this.url = null;
     this.img = null;
