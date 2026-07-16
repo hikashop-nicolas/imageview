@@ -22,6 +22,13 @@ const en: Dict = {
   translateTo: "Translate to",
   translating: "Translating…",
   translateLoading: "Loading translation model…",
+  contact: "Contact",
+  addToContacts: "Add to contacts",
+  email: "Email",
+  phone: "Phone",
+  website: "Website",
+  extractRegion: "Extract text from a selected area (drag the handles)",
+  ocrAuto: "Auto-detect",
 };
 
 const fr: Dict = {
@@ -41,6 +48,13 @@ const fr: Dict = {
   translateTo: "Traduire vers",
   translating: "Traduction…",
   translateLoading: "Chargement du modèle de traduction…",
+  contact: "Contact",
+  addToContacts: "Ajouter aux contacts",
+  email: "E-mail",
+  phone: "Téléphone",
+  website: "Site web",
+  extractRegion: "Extraire le texte d'une zone sélectionnée (déplacez les poignées)",
+  ocrAuto: "Détection automatique",
 };
 
 const ja: Dict = {
@@ -60,6 +74,13 @@ const ja: Dict = {
   translateTo: "翻訳先",
   translating: "翻訳中…",
   translateLoading: "翻訳モデルを読み込み中…",
+  contact: "連絡先",
+  addToContacts: "連絡先に追加",
+  email: "メール",
+  phone: "電話",
+  website: "ウェブサイト",
+  extractRegion: "選択した範囲のテキストを抽出 (ハンドルをドラッグ)",
+  ocrAuto: "自動検出",
 };
 
 const LOCALES: Record<string, Dict> = { en, fr, ja };

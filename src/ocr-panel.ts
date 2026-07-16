@@ -4,6 +4,7 @@
 
 import type { OcrRun } from "localml/ocr";
 import type { TranslateRun } from "localml/translate";
+import { createRegionSelector, type Region } from "./region";
 
 export interface OcrPanelHandlers {
   // Adds a "new document" action; source distinguishes the recognized text from a translation.
@@ -43,6 +44,19 @@ const TESS_TO_COMMON: Record<string, string> = {
   nld: "nl", rus: "ru", jpn: "ja", chi_sim: "zh", kor: "ko", ara: "ar",
 };
 
+// Map franc's ISO 639-3 code to a supported Tesseract language (mostly identity; Mandarin
+// "cmn" -> chi_sim). Used to auto-detect the OCR language from a first recognition pass.
+const FRANC_TO_TESS: Record<string, string> = {
+  eng: "eng", fra: "fra", deu: "deu", spa: "spa", ita: "ita", por: "por",
+  nld: "nld", rus: "rus", jpn: "jpn", cmn: "chi_sim", kor: "kor", ara: "ara",
+};
+
+async function detectTessLang(text: string): Promise<string | null> {
+  if (text.trim().length < 8) return null; // too little text to detect reliably
+  const { franc } = await import("franc-min");
+  return FRANC_TO_TESS[franc(text)] ?? null;
+}
+
 // Target languages offered for translation (common codes, matching localml/translate).
 const TRANSLATE_TARGETS: { code: string; label: string }[] = [
   { code: "en", label: "English" },
@@ -70,19 +84,19 @@ function defaultTarget(srcCommon: string): string {
   return srcCommon === "en" ? "fr" : "en";
 }
 
-// Rasterize the image to a canvas before OCR. Tesseract can read a raster <img> directly
-// but throws on an SVG <img>; drawing it to a canvas first makes every format the browser
-// can render (SVG included) OCR-able.
-function toCanvas(img: HTMLImageElement): HTMLCanvasElement | HTMLImageElement {
-  const w = img.naturalWidth || img.clientWidth;
-  const h = img.naturalHeight || img.clientHeight;
+// Rasterize the selected region of the image to a canvas before OCR. Drawing to a canvas
+// (rather than passing the <img>) also makes SVG and every browser-renderable format OCR-able,
+// since Tesseract throws when handed an SVG <img> directly.
+function cropToCanvas(img: HTMLImageElement, r: Region): HTMLCanvasElement | HTMLImageElement {
+  const w = Math.round(r.w);
+  const h = Math.round(r.h);
   if (!w || !h) return img;
   const canvas = document.createElement("canvas");
   canvas.width = w;
   canvas.height = h;
   const ctx = canvas.getContext("2d");
   if (!ctx) return img;
-  ctx.drawImage(img, 0, 0, w, h);
+  ctx.drawImage(img, r.x, r.y, r.w, r.h, 0, 0, w, h);
   return canvas;
 }
 
@@ -97,6 +111,7 @@ function defaultLang(): string {
 
 export function buildOcrPanel(
   img: HTMLImageElement,
+  root: HTMLElement,
   tr: (key: string) => string,
   handlers: OcrPanelHandlers,
 ): OcrPanel {
@@ -110,15 +125,16 @@ export function buildOcrPanel(
   title.textContent = tr("extractText");
   const langSel = document.createElement("select");
   langSel.setAttribute("aria-label", tr("ocrLanguage"));
+  langSel.add(new Option(tr("ocrAuto"), "auto"));
   for (const l of OCR_LANGS) langSel.add(new Option(l.label, l.code));
-  langSel.value = defaultLang();
+  langSel.value = "auto"; // auto-detect by default
   const close = document.createElement("button");
   close.className = "iv-panel-x";
   close.type = "button";
   close.setAttribute("aria-label", tr("close"));
   close.textContent = "×";
   close.addEventListener("click", handlers.onClose);
-  head.append(title, langSel, close);
+  head.append(title, close);
 
   const prog = document.createElement("div");
   prog.className = "iv-panel-prog";
@@ -150,10 +166,11 @@ export function buildOcrPanel(
 
   // --- translation subsection -------------------------------------------------------
   const sub = document.createElement("div");
-  sub.className = "iv-panel-sub";
+  sub.className = "iv-panel-col";
   const trow = document.createElement("div");
   trow.className = "iv-panel-row";
   const tLabel = document.createElement("span");
+  tLabel.className = "iv-panel-title";
   tLabel.textContent = tr("translateTo");
   const tgtSel = document.createElement("select");
   for (const l of TRANSLATE_TARGETS) tgtSel.add(new Option(l.label, l.code));
@@ -190,11 +207,31 @@ export function buildOcrPanel(
     tActions.appendChild(tNd);
   }
   sub.append(trow, tProg, tOut, tActions);
-  el.append(head, prog, text, actions, sub);
+
+  // OCR column: language picker header + recognized text + actions.
+  const ocrCol = document.createElement("div");
+  ocrCol.className = "iv-panel-col";
+  const ocrHead = document.createElement("div");
+  ocrHead.className = "iv-panel-row";
+  const ocrLabel = document.createElement("span");
+  ocrLabel.className = "iv-panel-title";
+  ocrLabel.textContent = tr("extractText");
+  ocrHead.append(ocrLabel, langSel);
+  ocrCol.append(ocrHead, prog, text, actions);
+
+  // Two columns side by side on wide screens, stacked on narrow (see styles).
+  const body = document.createElement("div");
+  body.className = "iv-panel-body";
+  body.append(ocrCol, sub);
+  el.append(head, body);
 
   let run: OcrRun | null = null;
   let tRun: TranslateRun | null = null;
   let disposed = false;
+
+  // Resizable selection over the image; OCR runs on the selected region (default: whole image).
+  const selector = createRegionSelector(img, () => void recognize());
+  root.appendChild(selector.el);
 
   async function translate(): Promise<void> {
     const source = text.value.trim();
@@ -237,18 +274,33 @@ export function buildOcrPanel(
     prog.textContent = tr("ocrLoading");
     const { runOcr } = await import("localml/ocr");
     if (disposed) return;
-    run = runOcr(toCanvas(img), {
-      lang: langSel.value,
-      onProgress: (p) => {
-        prog.textContent = p.stage === "recognize"
-          ? `${tr("ocrRecognizing")} ${Math.round(p.ratio * 100)}%`
-          : tr("ocrLoading");
-      },
-    });
+    const onProgress = (p: { stage: "load" | "recognize"; ratio: number }): void => {
+      prog.textContent = p.stage === "recognize"
+        ? `${tr("ocrRecognizing")} ${Math.round(p.ratio * 100)}%`
+        : tr("ocrLoading");
+    };
+    const pass = async (lang: string): Promise<string> => {
+      run = runOcr(cropToCanvas(img, selector.getRegion()), { lang, onProgress });
+      return (await run.done).text;
+    };
     try {
-      const { text: recognized } = await run.done;
+      const auto = langSel.value === "auto";
+      const firstLang = auto ? defaultLang() : langSel.value;
+      let result = await pass(firstLang);
       if (disposed) return;
-      const trimmed = recognized.trim();
+      if (auto) {
+        // Detect the language from the first pass; reflect it in the picker and, if it differs,
+        // recognize once more in the detected language for a better read.
+        const detected = await detectTessLang(result);
+        if (detected) {
+          langSel.value = detected;
+          if (detected !== firstLang) {
+            result = await pass(detected);
+            if (disposed) return;
+          }
+        }
+      }
+      const trimmed = result.trim();
       text.value = trimmed;
       prog.textContent = trimmed ? "" : tr("ocrNoText");
     } catch {
@@ -265,6 +317,7 @@ export function buildOcrPanel(
       disposed = true;
       run?.cancel();
       tRun?.cancel();
+      selector.destroy();
       el.remove();
     },
   };
