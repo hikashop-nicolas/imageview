@@ -37,6 +37,7 @@ export interface ImageViewerHandle {
 }
 
 class ImageViewer implements ImageViewerHandle {
+  private shell: HTMLElement;
   private root: HTMLElement;
   private url: string | null = null;
   private img: HTMLImageElement | null = null;
@@ -47,11 +48,18 @@ class ImageViewer implements ImageViewerHandle {
   private codes: DetectedCode[] = [];
   private card: HTMLElement | null = null;
   private ocrPanel: OcrPanel | null = null;
+  private splitter: HTMLElement | null = null;
+  private panelHeight: number | null = null; // remembered across open/close
 
   constructor(container: HTMLElement, input: ImageInput, opts: ImageViewerOptions) {
     ensureStyles();
     this.tr = translator(opts.i18n);
     this.opts = opts;
+
+    // A flex column: the image area (fills), an optional splitter, and the OCR panel.
+    const shell = document.createElement("div");
+    shell.className = "iv-shell";
+    this.shell = shell;
 
     const root = document.createElement("div");
     root.className = "iv-root";
@@ -77,7 +85,8 @@ class ImageViewer implements ImageViewerHandle {
       root.append(this.message(this.tr("nothingToDisplay")));
     }
 
-    container.appendChild(root);
+    shell.appendChild(root);
+    container.appendChild(shell);
   }
 
   private buildToolbar(): HTMLElement {
@@ -95,8 +104,7 @@ class ImageViewer implements ImageViewerHandle {
 
   private toggleOcr(): void {
     if (this.ocrPanel) {
-      this.ocrPanel.destroy();
-      this.ocrPanel = null;
+      this.closeOcr();
       return;
     }
     if (!this.img) return;
@@ -105,12 +113,44 @@ class ImageViewer implements ImageViewerHandle {
       : undefined;
     this.ocrPanel = buildOcrPanel(this.img, this.root, this.tr, {
       onExtractText,
-      onClose: () => {
-        this.ocrPanel?.destroy();
-        this.ocrPanel = null;
-      },
+      onClose: () => this.closeOcr(),
     });
-    this.root.appendChild(this.ocrPanel.el);
+
+    // Splitter above the panel; drag to rebalance image vs panel height.
+    const splitter = document.createElement("div");
+    splitter.className = "iv-splitter";
+    splitter.addEventListener("pointerdown", (e) => this.startSplit(e));
+    this.splitter = splitter;
+
+    const h = this.panelHeight ?? Math.round(this.shell.clientHeight * 0.42);
+    this.setPanelHeight(h);
+    this.shell.append(splitter, this.ocrPanel.el);
+  }
+
+  private closeOcr(): void {
+    this.ocrPanel?.destroy();
+    this.ocrPanel = null;
+    this.splitter?.remove();
+    this.splitter = null;
+  }
+
+  private setPanelHeight(h: number): void {
+    const max = this.shell.clientHeight - 80; // keep at least a sliver of image visible
+    const clamped = Math.max(120, Math.min(h, Math.max(120, max)));
+    this.panelHeight = clamped;
+    if (this.ocrPanel) this.ocrPanel.el.style.height = `${clamped}px`;
+  }
+
+  private startSplit(e: PointerEvent): void {
+    e.preventDefault();
+    const shellRect = this.shell.getBoundingClientRect();
+    const move = (ev: PointerEvent): void => this.setPanelHeight(shellRect.bottom - ev.clientY);
+    const up = (): void => {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", up);
+    };
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
   }
 
   // Run code detection once, lazily, caching the result. Never rejects.
@@ -186,12 +226,11 @@ class ImageViewer implements ImageViewerHandle {
 
   destroy(): void {
     this.closeCard();
-    this.ocrPanel?.destroy();
-    this.ocrPanel = null;
+    this.closeOcr();
     if (this.url) URL.revokeObjectURL(this.url);
     this.url = null;
     this.img = null;
-    this.root.remove();
+    this.shell.remove();
   }
 }
 

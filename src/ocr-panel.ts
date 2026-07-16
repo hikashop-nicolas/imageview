@@ -109,6 +109,40 @@ function defaultLang(): string {
   return "eng";
 }
 
+function labelSpan(text: string): HTMLElement {
+  const s = document.createElement("span");
+  s.className = "iv-row-label";
+  s.textContent = text;
+  return s;
+}
+
+function row(children: HTMLElement[]): HTMLElement {
+  const r = document.createElement("div");
+  r.className = "iv-panel-row";
+  r.append(...children);
+  return r;
+}
+
+// One accordion page: a clickable header + a collapsible body.
+function accSection(title: string, children: HTMLElement[]): { sec: HTMLElement; head: HTMLButtonElement; body: HTMLElement } {
+  const sec = document.createElement("div");
+  sec.className = "iv-acc-sec";
+  const head = document.createElement("button");
+  head.type = "button";
+  head.className = "iv-acc-head";
+  const t = document.createElement("span");
+  t.textContent = title;
+  const chev = document.createElement("span");
+  chev.className = "iv-acc-chev";
+  chev.textContent = "▾";
+  head.append(t, chev);
+  const body = document.createElement("div");
+  body.className = "iv-acc-body";
+  body.append(...children);
+  sec.append(head, body);
+  return { sec, head, body };
+}
+
 export function buildOcrPanel(
   img: HTMLImageElement,
   root: HTMLElement,
@@ -118,27 +152,22 @@ export function buildOcrPanel(
   const el = document.createElement("div");
   el.className = "iv-panel";
 
-  const head = document.createElement("div");
-  head.className = "iv-panel-head";
-  const title = document.createElement("span");
-  title.className = "iv-panel-title";
-  title.textContent = tr("extractText");
+  const closeBtn = document.createElement("button");
+  closeBtn.className = "iv-panel-close";
+  closeBtn.type = "button";
+  closeBtn.setAttribute("aria-label", tr("close"));
+  closeBtn.textContent = "×";
+  closeBtn.addEventListener("click", handlers.onClose);
+
+  // --- OCR controls ---
   const langSel = document.createElement("select");
   langSel.setAttribute("aria-label", tr("ocrLanguage"));
   langSel.add(new Option(tr("ocrAuto"), "auto"));
   for (const l of OCR_LANGS) langSel.add(new Option(l.label, l.code));
   langSel.value = "auto"; // auto-detect by default
-  const close = document.createElement("button");
-  close.className = "iv-panel-x";
-  close.type = "button";
-  close.setAttribute("aria-label", tr("close"));
-  close.textContent = "×";
-  close.addEventListener("click", handlers.onClose);
-  head.append(title, close);
 
   const prog = document.createElement("div");
   prog.className = "iv-panel-prog";
-
   const text = document.createElement("textarea");
   text.spellcheck = false;
 
@@ -164,14 +193,7 @@ export function buildOcrPanel(
     actions.appendChild(nd);
   }
 
-  // --- translation subsection -------------------------------------------------------
-  const sub = document.createElement("div");
-  sub.className = "iv-panel-col";
-  const trow = document.createElement("div");
-  trow.className = "iv-panel-row";
-  const tLabel = document.createElement("span");
-  tLabel.className = "iv-panel-title";
-  tLabel.textContent = tr("translateTo");
+  // --- translation controls ---
   const tgtSel = document.createElement("select");
   for (const l of TRANSLATE_TARGETS) tgtSel.add(new Option(l.label, l.code));
   tgtSel.value = defaultTarget(TESS_TO_COMMON[langSel.value] ?? "en");
@@ -179,7 +201,6 @@ export function buildOcrPanel(
   tBtn.className = "iv-card-btn";
   tBtn.type = "button";
   tBtn.textContent = tr("translate");
-  trow.append(tLabel, tgtSel, tBtn);
 
   const tProg = document.createElement("div");
   tProg.className = "iv-panel-prog";
@@ -206,24 +227,36 @@ export function buildOcrPanel(
     tNd.addEventListener("click", () => handlers.onExtractText!(tOut.value, "translate"));
     tActions.appendChild(tNd);
   }
-  sub.append(trow, tProg, tOut, tActions);
 
-  // OCR column: language picker header + recognized text + actions.
-  const ocrCol = document.createElement("div");
-  ocrCol.className = "iv-panel-col";
-  const ocrHead = document.createElement("div");
-  ocrHead.className = "iv-panel-row";
-  const ocrLabel = document.createElement("span");
-  ocrLabel.className = "iv-panel-title";
-  ocrLabel.textContent = tr("extractText");
-  ocrHead.append(ocrLabel, langSel);
-  ocrCol.append(ocrHead, prog, text, actions);
+  // Accordion: page 1 = OCR (open by default), page 2 = Translate (locked until there is
+  // recognized text). Clicking a header switches pages; the open body + its textarea flex to
+  // fill the panel, so a taller panel gives a taller text area.
+  const acc = document.createElement("div");
+  acc.className = "iv-acc";
+  const ocrSec = accSection(tr("extractText"), [row([labelSpan(tr("ocrLanguage")), langSel]), prog, text, actions]);
+  const transSec = accSection(tr("translate"), [row([labelSpan(tr("translateTo")), tgtSel, tBtn]), tProg, tOut, tActions]);
+  transSec.head.disabled = true;
+  acc.append(ocrSec.sec, transSec.sec);
+  el.append(closeBtn, acc);
 
-  // Two columns side by side on wide screens, stacked on narrow (see styles).
-  const body = document.createElement("div");
-  body.className = "iv-panel-body";
-  body.append(ocrCol, sub);
-  el.append(head, body);
+  const setOpen = (which: "ocr" | "translate"): void => {
+    ocrSec.sec.classList.toggle("open", which === "ocr");
+    transSec.sec.classList.toggle("open", which === "translate");
+  };
+  ocrSec.head.addEventListener("click", () => setOpen("ocr"));
+  transSec.head.addEventListener("click", () => {
+    if (!transSec.head.disabled) setOpen("translate");
+  });
+  setOpen("ocr");
+
+  // The Translate page is only reachable once there is text; keep it in sync as OCR fills the
+  // box or the user edits it.
+  const updateTranslateAvail = (): void => {
+    const has = !!text.value.trim();
+    transSec.head.disabled = !has;
+    if (!has && transSec.sec.classList.contains("open")) setOpen("ocr");
+  };
+  text.addEventListener("input", updateTranslateAvail);
 
   let run: OcrRun | null = null;
   let tRun: TranslateRun | null = null;
@@ -302,6 +335,7 @@ export function buildOcrPanel(
       }
       const trimmed = result.trim();
       text.value = trimmed;
+      updateTranslateAvail();
       prog.textContent = trimmed ? "" : tr("ocrNoText");
     } catch {
       if (!disposed) prog.textContent = tr("ocrNoText");
