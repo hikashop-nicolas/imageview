@@ -9,5 +9,7 @@ export {
   type ImageInput,
   type ImageViewerOptions,
   type ImageViewerHandle,
+  type ExtractSource,
 } from "./viewer";
+export { detectCodes, type DetectedCode } from "./detect";
 export { setLocale, t, type Dict } from "./i18n";

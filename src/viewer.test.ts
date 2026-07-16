@@ -11,6 +11,9 @@ function mount(bytes: Uint8Array, opts = {}) {
   return { container, handle };
 }
 
+// Flush pending microtasks (the click handler is async: it awaits code detection first).
+const tick = () => new Promise((r) => setTimeout(r, 0));
+
 describe("createImageViewer", () => {
   it("renders an <img> with a blob URL for non-empty bytes", () => {
     const { container, handle } = mount(PNG_BYTES);
@@ -21,17 +24,19 @@ describe("createImageViewer", () => {
     handle.destroy();
   });
 
-  it("toggles is-actual on click and reports it via onZoomToggle", () => {
+  it("toggles is-actual on click (no code under the point) and reports via onZoomToggle", async () => {
     const onZoomToggle = vi.fn();
     const { container, handle } = mount(PNG_BYTES, { onZoomToggle });
     const root = container.querySelector(".iv-root")!;
     const img = container.querySelector("img")!;
 
-    img.dispatchEvent(new Event("click"));
+    img.dispatchEvent(new MouseEvent("click"));
+    await tick();
     expect(root.classList.contains("is-actual")).toBe(true);
     expect(onZoomToggle).toHaveBeenLastCalledWith(true);
 
-    img.dispatchEvent(new Event("click"));
+    img.dispatchEvent(new MouseEvent("click"));
+    await tick();
     expect(root.classList.contains("is-actual")).toBe(false);
     expect(onZoomToggle).toHaveBeenLastCalledWith(false);
     handle.destroy();

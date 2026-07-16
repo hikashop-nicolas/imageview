@@ -8,16 +8,31 @@ export type Dict = Record<string, string>;
 const en: Dict = {
   cannotDisplay: "This image could not be displayed by your browser.",
   nothingToDisplay: "Nothing to display.",
+  qrCode: "QR code",
+  copy: "Copy",
+  copied: "Copied",
+  newDocument: "New document",
+  close: "Close",
 };
 
 const fr: Dict = {
   cannotDisplay: "Cette image n'a pas pu être affichée par votre navigateur.",
   nothingToDisplay: "Rien à afficher.",
+  qrCode: "QR code",
+  copy: "Copier",
+  copied: "Copié",
+  newDocument: "Nouveau document",
+  close: "Fermer",
 };
 
 const ja: Dict = {
   cannotDisplay: "この画像はお使いのブラウザーでは表示できませんでした。",
   nothingToDisplay: "表示するものがありません。",
+  qrCode: "QRコード",
+  copy: "コピー",
+  copied: "コピーしました",
+  newDocument: "新規ドキュメント",
+  close: "閉じる",
 };
 
 const LOCALES: Record<string, Dict> = { en, fr, ja };
