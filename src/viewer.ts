@@ -101,7 +101,7 @@ class ImageViewer implements ImageViewerHandle {
     }
     if (!this.img) return;
     const onExtractText = this.opts.onExtractText
-      ? (value: string) => this.opts.onExtractText!(value, { source: "ocr" })
+      ? (value: string, source: "ocr" | "translate") => this.opts.onExtractText!(value, { source })
       : undefined;
     this.ocrPanel = buildOcrPanel(this.img, this.tr, {
       onExtractText,

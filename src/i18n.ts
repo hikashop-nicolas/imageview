@@ -18,6 +18,10 @@ const en: Dict = {
   ocrLoading: "Loading OCR engine…",
   ocrRecognizing: "Recognizing…",
   ocrNoText: "No text found.",
+  translate: "Translate",
+  translateTo: "Translate to",
+  translating: "Translating…",
+  translateLoading: "Loading translation model…",
 };
 
 const fr: Dict = {
@@ -33,6 +37,10 @@ const fr: Dict = {
   ocrLoading: "Chargement du moteur OCR…",
   ocrRecognizing: "Reconnaissance…",
   ocrNoText: "Aucun texte détecté.",
+  translate: "Traduire",
+  translateTo: "Traduire vers",
+  translating: "Traduction…",
+  translateLoading: "Chargement du modèle de traduction…",
 };
 
 const ja: Dict = {
@@ -48,6 +56,10 @@ const ja: Dict = {
   ocrLoading: "OCRエンジンを読み込み中…",
   ocrRecognizing: "認識中…",
   ocrNoText: "テキストが見つかりませんでした。",
+  translate: "翻訳",
+  translateTo: "翻訳先",
+  translating: "翻訳中…",
+  translateLoading: "翻訳モデルを読み込み中…",
 };
 
 const LOCALES: Record<string, Dict> = { en, fr, ja };
