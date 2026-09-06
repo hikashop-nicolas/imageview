@@ -8,6 +8,9 @@ Read-only and dependency-free at its core. On-image QR/barcode detection, OCR an
 translation are layered on top in later versions and load their engines on demand, so the
 base viewer stays tiny.
 
+**[▶ Live demo](https://hikashop-nicolas.github.io/imageview/)** — open an image, toggle
+fit vs actual size, and try the QR, OCR and translation layers.
+
 Used in production by **[Omnitext](https://hikashop-nicolas.github.io/omnitext/)**, a free
 browser editor for practically any file, as its image viewer. Try it there without
 installing anything.
