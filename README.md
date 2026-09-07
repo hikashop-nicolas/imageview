@@ -35,7 +35,7 @@ handle.destroy();
 - `options`: `{ i18n?: Record<string, string>; onZoomToggle?: (actual: boolean) => void }`
 - returns `{ getImage(): HTMLImageElement | null; destroy(): void }`
 
-`setLocale(code)` forces a UI language (`en` / `fr` / `ja`); by default the browser's
+`setLocale(code)` forces a UI language (`en`, `fr`, `ja`, `es`, `de`, `pt`, `ru`, `zh`); by default the browser's
 preferred language is used, English fallback. Per-instance string overrides go through
 `options.i18n`.
 
