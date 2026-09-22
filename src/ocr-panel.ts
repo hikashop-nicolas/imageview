@@ -301,7 +301,9 @@ export function buildOcrPanel(
 
   tBtn.addEventListener("click", () => void translate());
 
+  let latest = 0;
   async function recognize(): Promise<void> {
+    const mine = ++latest; // a newer recognize() (language change) supersedes this one
     run?.cancel();
     text.value = "";
     prog.textContent = tr("ocrLoading");
@@ -337,8 +339,10 @@ export function buildOcrPanel(
       text.value = trimmed;
       updateTranslateAvail();
       prog.textContent = trimmed ? "" : tr("ocrNoText");
-    } catch {
-      if (!disposed) prog.textContent = tr("ocrNoText");
+    } catch (e) {
+      if (disposed || mine !== latest) return;
+      // A cancel, or a model download the host refused, is not an empty result: say nothing.
+      prog.textContent = e instanceof Error && e.message === "cancelled" ? "" : tr("ocrNoText");
     }
   }
 
