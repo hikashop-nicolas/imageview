@@ -129,7 +129,49 @@ class ImageViewer implements ImageViewerHandle {
         this.resizeObserver = new ResizeObserver(() => this.syncZoom());
         this.resizeObserver.observe(root);
       }
+      this.bindPinch();
     } else this.bar.classList.add("iv-bar-broken");
+  }
+
+  // Two fingers zoom the picture about the point between them.
+  private bindPinch(): void {
+    const root = this.root;
+    const dist = (e: TouchEvent): number =>
+      Math.hypot(e.touches[0]!.clientX - e.touches[1]!.clientX, e.touches[0]!.clientY - e.touches[1]!.clientY) || 1;
+    let pinch: { dist: number; zoom: number } | null = null;
+    let raf = 0;
+    let to = 1;
+    let at = { x: 0, y: 0 };
+    root.addEventListener(
+      "touchstart",
+      (e) => {
+        pinch = e.touches.length === 2 ? { dist: dist(e), zoom: this.zoom ?? this.fitScale() } : null;
+      },
+      { passive: true },
+    );
+    root.addEventListener(
+      "touchmove",
+      (e) => {
+        if (!pinch || e.touches.length !== 2) return;
+        e.preventDefault();
+        to = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, pinch.zoom * (dist(e) / pinch.dist)));
+        at = {
+          x: (e.touches[0]!.clientX + e.touches[1]!.clientX) / 2,
+          y: (e.touches[0]!.clientY + e.touches[1]!.clientY) / 2,
+        };
+        if (!raf)
+          raf = requestAnimationFrame(() => {
+            raf = 0;
+            this.setZoom(to, at);
+          });
+      },
+      { passive: false },
+    );
+    const end = (e: TouchEvent): void => {
+      if (e.touches.length < 2) pinch = null;
+    };
+    root.addEventListener("touchend", end, { passive: true });
+    root.addEventListener("touchcancel", end, { passive: true });
   }
 
   private buildBar(): HTMLElement {
@@ -208,14 +250,18 @@ class ImageViewer implements ImageViewerHandle {
     if (this.zoomLabel) this.zoomLabel.textContent = `${Math.round(z * 100)}%`;
   }
 
-  // Show the picture at scale `z` of its natural size (null: fitted), keeping the middle of the view where it was.
-  private setZoom(z: number | null): void {
+  // Show the picture at scale `z` of its natural size (null: fitted), keeping the point `at` (client
+  // coordinates; the middle of the view by default) of the picture where it was.
+  private setZoom(z: number | null, at?: { x: number; y: number }): void {
     const img = this.img;
     if (!img) return;
     const root = this.root;
+    const rect = root.getBoundingClientRect();
+    const px = at ? at.x - rect.left : root.clientWidth / 2;
+    const py = at ? at.y - rect.top : root.clientHeight / 2;
     const before = { w: img.offsetWidth || 1, h: img.offsetHeight || 1 };
-    const cx = (root.scrollLeft + root.clientWidth / 2 - img.offsetLeft) / before.w;
-    const cy = (root.scrollTop + root.clientHeight / 2 - img.offsetTop) / before.h;
+    const cx = (root.scrollLeft + px - img.offsetLeft) / before.w;
+    const cy = (root.scrollTop + py - img.offsetTop) / before.h;
     this.zoom = z;
     if (z === null) {
       root.classList.remove("is-actual");
@@ -225,8 +271,8 @@ class ImageViewer implements ImageViewerHandle {
       root.classList.add("is-actual");
       img.style.width = `${Math.round(img.naturalWidth * z)}px`;
       img.style.height = `${Math.round(img.naturalHeight * z)}px`;
-      root.scrollLeft = Math.max(0, cx * img.offsetWidth + img.offsetLeft - root.clientWidth / 2);
-      root.scrollTop = Math.max(0, cy * img.offsetHeight + img.offsetTop - root.clientHeight / 2);
+      root.scrollLeft = Math.max(0, cx * img.offsetWidth + img.offsetLeft - px);
+      root.scrollTop = Math.max(0, cy * img.offsetHeight + img.offsetTop - py);
     }
     this.syncZoom();
   }

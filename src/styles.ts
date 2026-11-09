@@ -10,7 +10,7 @@ export function ensureStyles(): void {
   s.textContent = `
     .iv-shell { height:100%; min-height:0; display:flex; flex-direction:column; }
     .iv-root { flex:1 1 auto; min-height:0; overflow:auto; background:var(--iv-canvas, #1a1a1a);
-      display:flex; align-items:center; justify-content:center; position:relative; }
+      display:flex; align-items:center; justify-content:center; position:relative; touch-action:pan-x pan-y; }
     .iv-splitter { flex:0 0 auto; height:9px; cursor:row-resize; background:var(--iv-border, #d5d8dc);
       position:relative; touch-action:none; }
     .iv-splitter::after { content:""; position:absolute; left:50%; top:50%; width:38px; height:3px;

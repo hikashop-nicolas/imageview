@@ -141,5 +141,36 @@ describe("createImageViewer", () => {
       expect(bar.contains(handle.getBarEnd())).toBe(true);
       handle.destroy();
     });
+
+    it("two fingers zoom about the point between them", async () => {
+      const { container, handle } = mount(PNG_BYTES);
+      const img = container.querySelector("img")!;
+      size(img, 400, 200);
+      const root = container.querySelector<HTMLElement>(".iv-root")!;
+      const touch = (type: string, pts: [number, number][]): Event =>
+        Object.assign(new Event(type, { cancelable: true, bubbles: true }), {
+          touches: pts.map(([clientX, clientY]) => ({ clientX, clientY })),
+        });
+      root.dispatchEvent(touch("touchstart", [[100, 100], [200, 100]]));
+      const move = touch("touchmove", [[50, 100], [250, 100]]); // the fingers spread to twice as far
+      root.dispatchEvent(move);
+      expect(move.defaultPrevented).toBe(true);
+      await new Promise((r) => setTimeout(r, 30));
+      // fitted, a 400 px picture in a view with no size here is shown at 100%: twice that is 200%
+      expect(root.classList.contains("is-actual")).toBe(true);
+      expect(img.style.width).toBe("800px");
+      expect(container.querySelector(".iv-zoom-label")!.textContent).toBe("200%");
+      handle.destroy();
+    });
+
+    it("a single touch is left to the browser, to scroll", () => {
+      const { container, handle } = mount(PNG_BYTES);
+      const root = container.querySelector<HTMLElement>(".iv-root")!;
+      root.dispatchEvent(Object.assign(new Event("touchstart", { bubbles: true }), { touches: [{ clientX: 1, clientY: 1 }] }));
+      const move = Object.assign(new Event("touchmove", { cancelable: true, bubbles: true }), { touches: [{ clientX: 9, clientY: 9 }] });
+      root.dispatchEvent(move);
+      expect(move.defaultPrevented).toBe(false);
+      handle.destroy();
+    });
   });
 });
