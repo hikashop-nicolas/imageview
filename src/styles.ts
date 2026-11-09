@@ -56,7 +56,7 @@ export function ensureStyles(): void {
     .iv-region-w  { left:-6px; top:calc(50% - 6px); cursor:ew-resize; }
     .iv-root.is-actual img { margin:auto; }
     .iv-bar { flex:0 0 auto; display:flex; align-items:center; gap:6px; padding:5px 8px; box-sizing:border-box;
-      background:var(--iv-chrome, #2b2f36); color:var(--iv-card-fg, #e6e6e6); border-top:1px solid var(--iv-border, #1c1f24);
+      background:var(--iv-chrome, #2b2f36); color:var(--iv-bar-fg, #e6e6e6); border-top:1px solid var(--iv-border, #1c1f24);
       font:13px system-ui, sans-serif; }
     .iv-bb-btn { min-width:30px; height:30px; flex:0 0 auto; padding:0 8px; box-sizing:border-box; display:inline-flex;
       align-items:center; justify-content:center; font:inherit; background:var(--iv-btn, #3a3f47); color:inherit;
