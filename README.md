@@ -32,8 +32,13 @@ handle.destroy();
 `createImageViewer(container, input, options?)`:
 
 - `input`: `{ bytes: Uint8Array; mime?: string; filename?: string }`
-- `options`: `{ i18n?: Record<string, string>; onZoomToggle?: (actual: boolean) => void }`
-- returns `{ getImage(): HTMLImageElement | null; destroy(): void }`
+- `options`: `{ i18n?: Record<string, string>; onZoomToggle?: (actual: boolean) => void; onFullscreen?: () => void; onExtractText?: ... }`
+- returns `{ getImage(); getBarEnd(); setReadingMode(on); destroy() }`
+
+A bottom bar holds the OCR button on the left, then a zoom slider (10% to 400%, a click on the picture
+still toggles fit and 100%) and, when the host passes `onFullscreen`, a fullscreen button. The host does
+the fullscreen itself and tells the viewer with `setReadingMode(on)`, which leaves the picture, the zoom
+and the way out. `getBarEnd()` is the empty end of the bar, for a control the host owns.
 
 `setLocale(code)` forces a UI language (`en`, `fr`, `ja`, `es`, `de`, `pt`, `ru`, `zh`); by default the browser's
 preferred language is used, English fallback. Per-instance string overrides go through

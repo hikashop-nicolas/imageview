@@ -29,6 +29,9 @@ const en: Dict = {
   website: "Website",
   extractRegion: "Extract text from a selected area (drag the handles)",
   ocrAuto: "Auto-detect",
+  zoom: "Zoom",
+  fullscreen: "Fullscreen",
+  exitFullscreen: "Exit fullscreen",
 };
 
 const fr: Dict = {
@@ -55,6 +58,9 @@ const fr: Dict = {
   website: "Site web",
   extractRegion: "Extraire le texte d'une zone sélectionnée (déplacez les poignées)",
   ocrAuto: "Détection automatique",
+  zoom: "Zoom",
+  fullscreen: "Plein écran",
+  exitFullscreen: "Quitter le plein écran",
 };
 
 const ja: Dict = {
@@ -81,6 +87,9 @@ const ja: Dict = {
   website: "ウェブサイト",
   extractRegion: "選択した範囲のテキストを抽出 (ハンドルをドラッグ)",
   ocrAuto: "自動検出",
+  zoom: "ズーム",
+  fullscreen: "全画面表示",
+  exitFullscreen: "全画面表示を終了",
 };
 
 const es: Dict = {
@@ -107,6 +116,9 @@ const es: Dict = {
   website: "Sitio web",
   extractRegion: "Extraer el texto de un área seleccionada (arrastre los tiradores)",
   ocrAuto: "Detección automática",
+  zoom: "Zoom",
+  fullscreen: "Pantalla completa",
+  exitFullscreen: "Salir de pantalla completa",
 };
 
 const de: Dict = {
@@ -133,6 +145,9 @@ const de: Dict = {
   website: "Website",
   extractRegion: "Text aus einem gewählten Bereich auslesen (an den Griffen ziehen)",
   ocrAuto: "Automatisch erkennen",
+  zoom: "Zoom",
+  fullscreen: "Vollbild",
+  exitFullscreen: "Vollbild beenden",
 };
 
 const pt: Dict = {
@@ -159,6 +174,9 @@ const pt: Dict = {
   website: "Sítio web",
   extractRegion: "Extrair o texto de uma área selecionada (arraste as pegas)",
   ocrAuto: "Detetar automaticamente",
+  zoom: "Zoom",
+  fullscreen: "Tela cheia",
+  exitFullscreen: "Sair da tela cheia",
 };
 
 const ru: Dict = {
@@ -185,6 +203,9 @@ const ru: Dict = {
   website: "Сайт",
   extractRegion: "Распознать текст в выбранной области (потяните за маркеры)",
   ocrAuto: "Определить автоматически",
+  zoom: "Масштаб",
+  fullscreen: "Полноэкранный режим",
+  exitFullscreen: "Выйти из полноэкранного режима",
 };
 
 const zh: Dict = {
@@ -211,6 +232,9 @@ const zh: Dict = {
   website: "网站",
   extractRegion: "从选定区域提取文字（拖动手柄）",
   ocrAuto: "自动检测",
+  zoom: "缩放",
+  fullscreen: "全屏",
+  exitFullscreen: "退出全屏",
 };
 
 const LOCALES: Record<string, Dict> = { en, fr, ja, es, de, pt, ru, zh };

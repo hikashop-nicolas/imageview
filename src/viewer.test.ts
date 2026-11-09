@@ -74,4 +74,72 @@ describe("createImageViewer", () => {
     expect(container.querySelector(".iv-msg")?.textContent).toBe("VIDE");
     handle.destroy();
   });
+
+  describe("bottom bar", () => {
+    const size = (img: HTMLImageElement, w: number, h: number): void => {
+      Object.defineProperty(img, "naturalWidth", { value: w, configurable: true });
+      Object.defineProperty(img, "naturalHeight", { value: h, configurable: true });
+    };
+
+    it("puts OCR first, then the zoom, and a slot at the end for the host", () => {
+      const { container, handle } = mount(PNG_BYTES);
+      const kids = Array.from(container.querySelector(".iv-bar")!.children);
+      expect(kids[0]!.classList.contains("iv-ocr-btn")).toBe(true);
+      expect(container.querySelector(".iv-zoom")).not.toBeNull();
+      expect(kids[kids.length - 1]).toBe(handle.getBarEnd());
+      expect(container.querySelector(".iv-fs-btn")).toBeNull(); // no fullscreen unless the host takes it
+      handle.destroy();
+    });
+
+    it("the slider shows the picture at that share of its natural size", () => {
+      const { container, handle } = mount(PNG_BYTES);
+      const img = container.querySelector("img")!;
+      size(img, 400, 200);
+      const slider = container.querySelector<HTMLInputElement>(".iv-zoom")!;
+      slider.value = "500"; // the middle of a logarithmic 10%..400%: 63%
+      slider.dispatchEvent(new Event("input"));
+      expect(container.querySelector(".iv-root")!.classList.contains("is-actual")).toBe(true);
+      expect(img.style.width).toBe("253px");
+      expect(container.querySelector(".iv-zoom-label")!.textContent).toBe("63%");
+      handle.destroy();
+    });
+
+    it("a click goes back to fitted after the slider, and the label follows", async () => {
+      const { container, handle } = mount(PNG_BYTES);
+      const img = container.querySelector("img")!;
+      size(img, 400, 200);
+      const slider = container.querySelector<HTMLInputElement>(".iv-zoom")!;
+      slider.value = "800";
+      slider.dispatchEvent(new Event("input"));
+      img.dispatchEvent(new MouseEvent("click"));
+      await tick();
+      expect(container.querySelector(".iv-root")!.classList.contains("is-actual")).toBe(false);
+      expect(img.style.width).toBe("");
+      handle.destroy();
+    });
+
+    it("has a fullscreen button when the host wants one, and reading mode swaps it and hides the rest", () => {
+      const onFullscreen = vi.fn();
+      const { container, handle } = mount(PNG_BYTES, { onFullscreen });
+      const fs = container.querySelector<HTMLButtonElement>(".iv-fs-btn")!;
+      fs.click();
+      expect(onFullscreen).toHaveBeenCalledOnce();
+      const before = fs.title;
+      handle.setReadingMode(true);
+      expect(container.querySelector(".iv-shell")!.classList.contains("iv-reading")).toBe(true);
+      expect(fs.title).not.toBe(before);
+      handle.setReadingMode(false);
+      expect(container.querySelector(".iv-shell")!.classList.contains("iv-reading")).toBe(false);
+      expect(fs.title).toBe(before);
+      handle.destroy();
+    });
+
+    it("keeps the bar, with only the host's slot working, when there is no picture", () => {
+      const { container, handle } = mount(new Uint8Array(0));
+      const bar = container.querySelector(".iv-bar")!;
+      expect(bar.classList.contains("iv-bar-broken")).toBe(true);
+      expect(bar.contains(handle.getBarEnd())).toBe(true);
+      handle.destroy();
+    });
+  });
 });

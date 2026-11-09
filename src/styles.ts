@@ -54,11 +54,22 @@ export function ensureStyles(): void {
     .iv-region-s  { left:calc(50% - 6px); bottom:-6px; cursor:ns-resize; }
     .iv-region-sw { left:-6px; bottom:-6px; cursor:nesw-resize; }
     .iv-region-w  { left:-6px; top:calc(50% - 6px); cursor:ew-resize; }
-    .iv-toolbar { position:absolute; top:10px; right:10px; z-index:3; display:flex; gap:6px; }
-    .iv-tbtn { display:inline-flex; align-items:center; gap:6px; border:1px solid var(--iv-border, #d5d8dc);
-      background:var(--iv-btn-bg, rgba(255,255,255,0.92)); color:var(--iv-card-fg, #1a1a1a); border-radius:8px;
-      padding:6px 11px; font:13px system-ui, sans-serif; cursor:pointer; box-shadow:0 1px 4px rgba(0,0,0,0.18); }
-    .iv-tbtn:hover { background:var(--iv-btn-hover, #fff); }
+    .iv-root.is-actual img { margin:auto; }
+    .iv-bar { flex:0 0 auto; display:flex; align-items:center; gap:6px; padding:5px 8px; box-sizing:border-box;
+      background:var(--iv-chrome, #2b2f36); color:var(--iv-card-fg, #e6e6e6); border-top:1px solid var(--iv-border, #1c1f24);
+      font:13px system-ui, sans-serif; }
+    .iv-bb-btn { min-width:30px; height:30px; flex:0 0 auto; padding:0 8px; box-sizing:border-box; display:inline-flex;
+      align-items:center; justify-content:center; font:inherit; background:var(--iv-btn, #3a3f47); color:inherit;
+      border:1px solid var(--iv-btn-border, #4a4f57); border-radius:5px; cursor:pointer; }
+    .iv-bb-btn:hover, .iv-bb-btn.is-on { border-color:var(--iv-accent, #6e7bff); }
+    .iv-bb-btn:focus-visible { outline:2px solid var(--iv-accent, #6e7bff); outline-offset:1px; }
+    .iv-bb-icon { padding:0; width:30px; }
+    .iv-bb-grow { flex:1 1 auto; min-width:0; }
+    .iv-zoom { flex:0 1 96px; width:96px; min-width:40px; accent-color:var(--iv-accent, #6e7bff); }
+    .iv-zoom-label { flex:0 0 auto; min-width:38px; text-align:right; font-variant-numeric:tabular-nums; }
+    .iv-bar-end { display:contents; }
+    .iv-bar-broken .iv-ctl { display:none; }
+    .iv-reading .iv-bar-end, .iv-reading .iv-ocr-btn { display:none; }
     .iv-panel { flex:0 0 auto; box-sizing:border-box; min-height:0; position:relative;
       display:flex; flex-direction:column; background:var(--iv-card-bg, #fff); color:var(--iv-card-fg, #1a1a1a);
       overflow:hidden; font:14px system-ui, sans-serif; }
