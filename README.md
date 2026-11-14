@@ -32,7 +32,7 @@ handle.destroy();
 `createImageViewer(container, input, options?)`:
 
 - `input`: `{ bytes: Uint8Array; mime?: string; filename?: string }`
-- `options`: `{ i18n?: Record<string, string>; onZoomToggle?: (actual: boolean) => void; onFullscreen?: () => void; onExtractText?: ... }`
+- `options`: `{ i18n?: Record<string, string>; onZoomToggle?: (actual: boolean) => void; onFullscreen?: () => void; onExtractText?: ...; onOcr?: (img) => boolean | Promise<boolean> }`. `onOcr` is asked first when OCR is pressed; returning true means the host handled the picture (e.g. read sheet music) and the text panel stays closed.
 - returns `{ getImage(); getBarEnd(); setReadingMode(on); destroy() }`
 
 A bottom bar holds the OCR button on the left, then a zoom slider (10% to 400%, a click on the picture

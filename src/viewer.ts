@@ -31,6 +31,9 @@ export interface ImageViewerOptions {
   // When provided, a fullscreen button sits beside the zoom; the host enters or leaves
   // fullscreen when it is pressed, and tells the viewer through setReadingMode.
   onFullscreen?: () => void;
+  // Called when OCR is pressed, before text recognition: true when the host took the picture
+  // itself (sheet music read into a score, for instance), and the text panel stays closed.
+  onOcr?: (img: HTMLImageElement) => boolean | Promise<boolean>;
 }
 
 export interface ImageViewerHandle {
@@ -188,7 +191,7 @@ class ImageViewer implements ImageViewerHandle {
       b.addEventListener("click", onClick);
       return b;
     };
-    const ocr = button("iv-ocr-btn", "OCR", this.tr("extractText"), () => this.toggleOcr());
+    const ocr = button("iv-ocr-btn", "OCR", this.tr("extractText"), () => void this.toggleOcr());
     const grow = document.createElement("span");
     grow.className = "iv-bb-grow";
     const slider = document.createElement("input");
@@ -277,12 +280,13 @@ class ImageViewer implements ImageViewerHandle {
     this.syncZoom();
   }
 
-  private toggleOcr(): void {
+  private async toggleOcr(): Promise<void> {
     if (this.ocrPanel) {
       this.closeOcr();
       return;
     }
     if (!this.img) return;
+    if (this.opts.onOcr && (await this.opts.onOcr(this.img))) return;
     const onExtractText = this.opts.onExtractText
       ? (value: string, source: "ocr" | "translate") => this.opts.onExtractText!(value, { source })
       : undefined;
